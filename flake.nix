@@ -27,7 +27,7 @@
           pname = "cgen";
           version = (builtins.readFile ./cgen/version);
           src = gitignoreSource ./.;
-          vendorHash = "sha256-f8Eawq4keSVeXWQv//ZuAaeanmDFaVTa+QdfnUdMZQs=";
+          vendorHash = "sha256-2mkxlI43ngiEu+5cd7gOw7bP44C6vbk3Q7RUYIiLub4=";
           buildInputs = with pkgs; [ glibc.static ];
           CFLAGS = "-I${pkgs.glibc.dev}/include";
           LDFLAGS = "-L${pkgs.glibc}/lib";
