@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/acristoffers/cgen/cgen"
 	"al.essio.dev/pkg/shellescape"
+	"github.com/acristoffers/cgen/cgen"
 )
 
 func GenerateZshCompletions(cli *cgen.CLI) error {
@@ -60,7 +60,7 @@ func writeZshCompletions(cli *cgen.CLI, w io.Writer) error {
 		iw.Indent(func() error {
 			count := 1
 			if len(cmds) > 0 {
-				args = append(args, fmt.Sprintf("'%d:command:(%s)'", count, strings.Join(cmds, " ")))
+				args = append(args, fmt.Sprintf(`"%d:command:(%s)"`, count, strings.Join(cmds, " ")))
 				count++
 			}
 			for _, arg := range positionals {
@@ -71,7 +71,9 @@ func writeZshCompletions(cli *cgen.CLI, w io.Writer) error {
 				}
 			}
 			for _, arg := range cli.Arguments {
-				args = append(args, generateZshArgument(arg))
+				if arg.Named {
+					args = append(args, generateZshArgument(arg))
+				}
 			}
 			if len(cmds) > 0 {
 				args = append(args, "'*::args:->args'")
@@ -129,7 +131,7 @@ func formatZshPositional(count int, arg cgen.Argument) string {
 	case "function":
 		comp = fmt.Sprintf("_arg_%s", arg.Name)
 	}
-	return fmt.Sprintf("'%d:%s:%s'", count, arg.Name, comp)
+	return fmt.Sprintf(`"%d:%s:%s"`, count, arg.Name, comp)
 }
 
 func writeZshFunctionCompletions(w *indentedWriter, cmd *cgen.Command) error {
@@ -189,8 +191,19 @@ func writeZshCommandTree(w *indentedWriter, cmd *cgen.Command) error {
 			if len(subs) > 0 {
 				args = append(args, fmt.Sprintf("'1:command:(%s)'", strings.Join(subs, " ")))
 			}
+			if len(subs) == 0 {
+				count := 1
+				for _, arg := range cmd.Arguments {
+					if !arg.Named {
+						args = append(args, formatZshPositional(count, arg))
+						count++
+					}
+				}
+			}
 			for _, arg := range cmd.Arguments {
-				args = append(args, generateZshArgument(arg))
+				if arg.Named {
+					args = append(args, generateZshArgument(arg))
+				}
 			}
 			if len(cmd.Subcommands) > 0 {
 				args = append(args, fmt.Sprintf("'*::args:->args_%s'", cmd.Name))

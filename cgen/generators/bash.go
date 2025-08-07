@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/acristoffers/cgen/cgen"
 	"al.essio.dev/pkg/shellescape"
+	"github.com/acristoffers/cgen/cgen"
 )
 
 func GenerateBashCompletions(cli *cgen.CLI) error {
@@ -38,6 +38,17 @@ func writeBashCompletions(cli *cgen.CLI, w io.Writer) error {
     [[ "$word" == "$1" ]] && return 0
   done
   return 1
+}
+
+index_of() {
+  local val="$1"; shift
+  for i in "${!COMP_WORDS[@]}"; do
+    if [[ "${COMP_WORDS[$i]}" == "$val" ]]; then
+      echo "$i"
+      return
+    fi
+  done
+  echo "-1"
 }
 
 `)
@@ -92,15 +103,17 @@ func writeBashArray(w *indentedWriter, name string, values []string) {
 func collectArguments(args []cgen.Argument) []string {
 	out := []string{}
 	for _, arg := range args {
-		if arg.Name != "" {
-			if arg.SingleDashLong {
-				out = append(out, "-"+arg.Name)
-			} else {
-				out = append(out, "--"+arg.Name)
+		if arg.Named {
+			if arg.Name != "" {
+				if arg.SingleDashLong {
+					out = append(out, "-"+arg.Name)
+				} else {
+					out = append(out, "--"+arg.Name)
+				}
 			}
-		}
-		if arg.ShortName != "" {
-			out = append(out, "-"+arg.ShortName)
+			if arg.ShortName != "" {
+				out = append(out, "-"+arg.ShortName)
+			}
 		}
 	}
 	return out
@@ -121,8 +134,16 @@ func completeCommandBash(w *indentedWriter, cli *cgen.CLI, cmd *cgen.Command) er
 	for _, name := range cmdNames {
 		w.WriteLine(fmt.Sprintf("if __bash_seen_word %s; then\n", shellescape.Quote(name)))
 		err := w.Indent(func() error {
+			for _, sub := range cmd.Subcommands {
+				err := completeSubcommandBash(w, []string{name}, &sub, cli.Arguments)
+				if err != nil {
+					return err
+				}
+			}
+
 			writeBashArray(w, "arguments", collectArguments(cmd.Arguments))
 			writeBashArray(w, "subcommands", collectCommands(cmd.Subcommands))
+			w.WriteLine(fmt.Sprintf("pos=$((${#COMP_WORDS[@]} - $(index_of %s) - 1))\n", cmd.Name))
 
 			if err := writeArgumentCaseSwitch(w, cmd.Arguments); err != nil {
 				return err
@@ -130,13 +151,6 @@ func completeCommandBash(w *indentedWriter, cli *cgen.CLI, cmd *cgen.Command) er
 
 			w.WriteLine("completions=(\"${subcommands[@]}\" \"${arguments[@]}\" \"${global_options[@]}\")\n")
 			w.WriteLine("COMPREPLY=( $(compgen -W \"${completions[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
-
-			for _, sub := range cmd.Subcommands {
-				err := completeSubcommandBash(w, []string{name}, &sub, cli.Arguments)
-				if err != nil {
-					return err
-				}
-			}
 
 			w.WriteLine("return\n")
 
@@ -156,8 +170,16 @@ func completeSubcommandBash(w *indentedWriter, path []string, subcmd *cgen.Comma
 	for _, name := range names {
 		w.WriteLine(fmt.Sprintf("if __bash_seen_word %s; then\n", shellescape.Quote(name)))
 		err := w.Indent(func() error {
+			for _, sub := range subcmd.Subcommands {
+				err := completeSubcommandBash(w, append(path, name), &sub, globalArgs)
+				if err != nil {
+					return err
+				}
+			}
+
 			writeBashArray(w, "arguments", collectArguments(subcmd.Arguments))
 			writeBashArray(w, "subcommands", collectCommands(subcmd.Subcommands))
+			w.WriteLine(fmt.Sprintf("pos=$((${#COMP_WORDS[@]} - $(index_of %s) - 1))\n", subcmd.Name))
 
 			if err := writeArgumentCaseSwitch(w, subcmd.Arguments); err != nil {
 				return err
@@ -165,13 +187,6 @@ func completeSubcommandBash(w *indentedWriter, path []string, subcmd *cgen.Comma
 
 			w.WriteLine("completions=(\"${subcommands[@]}\" \"${arguments[@]}\" \"${global_options[@]}\")\n")
 			w.WriteLine("COMPREPLY=( $(compgen -W \"${completions[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
-
-			for _, sub := range subcmd.Subcommands {
-				err := completeSubcommandBash(w, append(path, name), &sub, globalArgs)
-				if err != nil {
-					return err
-				}
-			}
 
 			w.WriteLine("return\n")
 
@@ -188,6 +203,9 @@ func completeSubcommandBash(w *indentedWriter, path []string, subcmd *cgen.Comma
 func writeArgumentCaseSwitch(w *indentedWriter, args []cgen.Argument) error {
 	w.WriteLine("case \"$prev\" in\n")
 	for _, arg := range args {
+		if !arg.Named {
+			continue
+		}
 		keys := []string{}
 		if arg.ShortName != "" {
 			keys = append(keys, "-"+arg.ShortName)
@@ -225,5 +243,41 @@ func writeArgumentCaseSwitch(w *indentedWriter, args []cgen.Argument) error {
 		}
 	}
 	w.WriteLine("esac\n")
+
+	w.WriteLine("case \"$pos\" in\n")
+	w.Indent(func() error {
+		count := 1
+		for _, arg := range args {
+			if arg.Named {
+				continue
+			}
+			w.WriteLine(fmt.Sprintf("%d)\n", count))
+			w.Indent(func() error {
+				switch arg.Completion.Type {
+				case "static":
+					escaped := shellescape.QuoteCommand(arg.Completion.Values)
+					w.WriteLine(fmt.Sprintf("values=(%s)\n", escaped))
+					w.WriteLine("COMPREPLY=( $(compgen -W \"${values[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+				case "file":
+					w.WriteLine("COMPREPLY=( $(compgen -f -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+				case "folder":
+					w.WriteLine("COMPREPLY=( $(compgen -d -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+				case "function":
+					w.WriteLine(fmt.Sprintf("values=$(%s)\n", arg.Completion.Bash))
+					w.WriteLine("COMPREPLY=( $(compgen -W \"${values[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+				}
+				if count == 1 {
+					w.WriteLine("COMPREPLY=(\"${COMPREPLY[@]}\" \"${subcommands[@]}\")\n")
+				}
+				w.WriteLine("return\n")
+				return nil
+			})
+			w.WriteLine(";;\n")
+			count++
+		}
+		return nil
+	})
+	w.WriteLine("esac\n")
+
 	return nil
 }

@@ -130,8 +130,11 @@ I did not really test positional arguments. They are implemented though.
 
 What is known to work:
 
-- Command completion
-- Named argument completion
+- Command completion.
+- Positional arguments (In ZSH, a command that accepts subcommands cannot have positional arguments,
+  they will be ignored. In BASH and Fish completion for subcommands and positional arguments are
+  joined).
+- Named argument completion.
 - Named argument's value (all completion:type have been tested, and with the exception that "folder"
   and "file" do the same thing, they work)
 - Subcommands (command nesting).
