@@ -43,7 +43,7 @@ func writeBashCompletions(cli *cgen.CLI, w io.Writer) error {
 `)
 
 	// _complete_command() stub
-	iw.WriteLine("_complete_command() {\n")
+	iw.WriteLine(fmt.Sprintf("_complete_command_%s() {\n", cli.Name))
 	iw.Indent(func() error {
 		iw.WriteLine("prev=${COMP_WORDS[COMP_CWORD-1]}\n")
 		for _, cmd := range cli.Commands {
@@ -64,7 +64,7 @@ func writeBashCompletions(cli *cgen.CLI, w io.Writer) error {
 		iw.Indent(func() error {
 			iw.WriteLine("if __bash_seen_word \"$command\"; then\n")
 			iw.Indent(func() error {
-				iw.WriteLine("_complete_command \"$command\"\n")
+				iw.WriteLine(fmt.Sprintf("_complete_command_%s \"$command\"\n", cli.Name))
 				iw.WriteLine("return $?\n")
 				return nil
 			})
