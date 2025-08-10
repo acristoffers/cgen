@@ -77,8 +77,8 @@ func writeManPage(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Argument, cmds [
 		for _, pos := range pos {
 			fmt.Fprintf(file, "\\fI%s\\fR", strings.ToUpper(pos))
 		}
-		fmt.Fprintln(file)
 	}
+	fmt.Fprintln(file)
 	fmt.Fprint(file, ".SH DESCRIPTION\n")
 	if cmd == nil {
 		fmt.Fprintf(file, ".B %s\n", cli.Name)
@@ -86,6 +86,10 @@ func writeManPage(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Argument, cmds [
 	} else {
 		fmt.Fprintf(file, ".B %s\n", strings.Join(parents, "-"))
 		fmt.Fprintf(file, "%s\n", cmd.LongDescription)
+		if cmd.Deprecated != "" {
+			fmt.Fprint(file, ".B DEPRECATED\n")
+			fmt.Fprintf(file, "%s\n", cmd.Deprecated)
+		}
 	}
 	fmt.Fprint(file, ".SH OPTIONS\n")
 	for _, arg := range args {
@@ -96,12 +100,20 @@ func writeManPage(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Argument, cmds [
 				fmt.Fprintln(file, line)
 			}
 		}
+		if arg.Deprecated != "" {
+			fmt.Fprint(file, ".B DEPRECATED\n")
+			fmt.Fprintf(file, "%s\n", arg.Deprecated)
+		}
 	}
 	if len(cmds) > 0 {
 		fmt.Fprint(file, ".SH COMMANDS\n")
 		for _, cmd := range cmds {
 			fmt.Fprint(file, ".TP\n")
 			fmt.Fprintf(file, ".BR %s (1)\n", strings.Join(append(parents, cmd.Name), "-"))
+			if cmd.Deprecated != "" {
+				fmt.Fprint(file, ".B DEPRECATED\n")
+				fmt.Fprintf(file, "%s\n", cmd.Deprecated)
+			}
 		}
 	}
 	return nil
@@ -110,7 +122,7 @@ func writeManPage(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Argument, cmds [
 func formatManPositionalArguments(args []cgen.Argument) []string {
 	xs := []string{}
 	for _, arg := range args {
-		if !arg.Named {
+		if !arg.Named && !arg.Hidden {
 			if arg.ValueLabel != "" {
 				xs = append(xs, strings.ToUpper(arg.ValueLabel))
 			} else if arg.Name != "" {
@@ -124,7 +136,7 @@ func formatManPositionalArguments(args []cgen.Argument) []string {
 func formatManArguments(args []cgen.Argument) []string {
 	xs := []string{}
 	for _, arg := range args {
-		if !arg.Named {
+		if !arg.Named || arg.Hidden {
 			continue
 		}
 		xs = append(xs, formatManArgument(&arg, "|"))
