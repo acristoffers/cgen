@@ -29,6 +29,9 @@ type Command struct {
 	// Long help message for this command.
 	LongDescription string `yaml:"long-description"`
 
+	// Short help message for this command.
+	ShortDescription string `yaml:"short-description"`
+
 	// Examples of how to use the command.
 	Example string `yaml:"example"`
 }

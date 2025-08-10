@@ -31,6 +31,9 @@ type Argument struct {
 
 	///// Manpages /////
 
+	// Name to display as value placeholder. Will be made UPPERCASE.
+	ValueLabel string `yaml:"value-label"`
+
 	// If the arguments should be sorted in the manpage.
 	Sort bool `yaml:"sort"`
 
