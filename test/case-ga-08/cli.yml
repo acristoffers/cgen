@@ -1,0 +1,8 @@
+---
+name: "cli"
+arguments:
+  - named: true
+    short-name: "v"
+    completion:
+      type: "static"
+      values: ["a", "b", "c"]

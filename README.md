@@ -1,49 +1,118 @@
 # cgen
 
-Generates completion scripts for Fish, Bash and ZSH from a description file.
+Generate shell completions for Fish, Bash, and ZSH from a single YAML file.
 
-## Description file
+`cgen` lets you define your CLI interface once in YAML, and instantly generate shell completion
+scripts for multiple shells. No more hand-writing separate completion files for every shell.
 
-The file that describes the CLI tool with all its commands, subcommands and arguments has the
-following format (note that this is an example, and not meant to be a real completion suit for git):
+---
+
+## ✨ Features
+
+* **One source of truth**: describe your CLI in a single YAML file.
+* **Multi-shell output**: generates completion scripts for **Fish**, **Bash**, and **ZSH**.
+* **Commands & subcommands**: full nesting support.
+* **Named & positional arguments**: completions work for both.
+* **Static, file, folder, and dynamic completions**: choose from built-in types or run commands for values.
+* **Shell-specific behavior**: define per-shell completion commands when needed.
+
+---
+
+## 📄 YAML Specification
+
+Your YAML file defines:
+
+1. **CLI metadata**
+2. **Global arguments**
+3. **Commands**
+4. **Subcommands**
+5. **Arguments (named & positional)**
+
+Below is a breakdown of the supported fields.
+
+---
+
+### 1. CLI Metadata
 
 ```yaml
 name: "git"
 short-description: "Version control system"
 long-description: "Git is a fast, scalable, distributed revision control system."
 version: "2.42.0"
+```
 
-arguments: # global arguments
-  - named: true # false for positional arguments, true for named ones (like -v, --verbose, -name)
-    name: "version"
-    short-description: "Print the git version" # shown during completion by some shells
-    single-dash-long: false # defaults to false, no need to pass it every time
-    space-value-separator: false # defaults to true
-    equal-value-separator: false # defaults to false
-    chainable: true # defaults to true
-    completion: # this is the default
-      type: "none" # none -> no completion
-                   # file -> file completion
-                   # folder -> folder completion
-                   # static -> a static list of values (see repository below)
-                   # function -> use the output of a command (see branch below)
-    long-description: "Show git’s version and exit." # for man pages only
-    example: "--version"
+* `name` — the command name.
+* `short-description` — shown in completion suggestions (when supported).
+* `long-description` — optional extended description.
+* `version` — your CLI tool version.
 
+---
+
+### 2. Global Arguments
+
+These are available for **all** commands.
+
+```yaml
+arguments:
   - named: true
-    name: "help"
-    short-description: "Print help message"
-    short-name: "h"
-    single-dash-long: false # single-dash-long:true is like the find tool: -name is an option
-                            # single-dash-long:false is like most GNU tools: --name is an option, -name == -n -a -m -e
-    chainable: true # if the short-version can be part of a chain, like "-hal" == "-h -a -l".
+    name: "version"
+    short-description: "Print the git version"
+    single-dash-long: false
+    long-value-separator: "space" # space | equal | both
+    short-value-separator: "space" # space | attached | both
     completion:
       type: "none"
-    example: "-h" # for man pages only
+    long-description: "Show git’s version and exit."
+    example: "--version"
+```
 
+**Fields:**
+
+* `named`:
+
+  * `true` → named option (`--verbose`, `-v`)
+  * `false` → positional argument
+* `name`: long form without leading dashes.
+* `short-name`: optional short flag (`-v`).
+* `single-dash-long`: whether long options can use a single dash (GNU-style vs. find-style).
+* `long-value-separator`: how the long-option’s value is provided (`--opt value`, `--opt=value`, or both).
+* `short-value-separator`: how the short-option’s value is provided (`-O 3`, `-O3`, or both).
+* `completion`: completion behavior (see below).
+* `example`: example usage for documentation/man pages.
+
+---
+
+### 3. Completion Types
+
+```yaml
+completion:
+  type: "file"      # file completion
+  type: "folder"    # folder completion
+  type: "static"    # predefined list
+  values: ["origin", "upstream"]
+
+  type: "function"  # generated dynamically by running a command (executed inside "$()")
+  bash: "git branch --format='%(refname:short)'"
+  fish: "git branch --format='%(refname:short)'"
+  zsh:  "git branch --format='%(refname:short)'"
+```
+
+**Supported types:**
+
+* `none` — no completion.
+* `file` — suggest files.
+* `folder` — suggest folders (currently same as `file` in some shells).
+* `static` — predefined values.
+* `function` — run a shell command to generate suggestions.
+
+---
+
+### 4. Commands
+
+```yaml
 commands:
   - name: "clone"
-    usage: "clone <repository> [directory]" # for man pages only
+    usage: "clone <repository> [directory]"
     long-description: "Clone a repository into a new directory."
     arguments:
       - named: false
@@ -52,52 +121,29 @@ commands:
         completion:
           type: "static"
           values: ["https://github.com/user/repo.git"]
-        example: "git clone https://github.com/user/repo.git"
 
       - named: false
         name: "directory"
         short-description: "Target directory"
         completion:
           type: "folder"
-        example: "git clone https://... my-folder"
+```
 
-  - name: "commit"
-    usage: "commit -m <message>"
-    arguments:
-      - named: true
-        name: "message"
-        short-name: "m"
-        short-description: "Commit message"
-        space-value-separator: true
-        equal-value-separator: true
-        chainable: true
-        completion:
-          type: "none"
-        example: "git commit -m 'Initial commit'"
+Each command:
 
-  - name: "push"
-    usage: "push [remote] [branch]"
-    arguments:
-      - named: false
-        name: "remote"
-        short-description: "Remote name"
-        completion:
-          type: "static"
-          values: ["origin", "upstream"] # those two values will be offered as completion
-        example: "git push origin"
+* Has a `name`.
+* Can have its own `usage` and `long-description`.
+* Can define its own arguments (named or positional).
+* Can contain **subcommands** (nesting is supported).
 
-      - named: false
-        name: "branch"
-        short-description: "Branch name"
-        completion:
-          type: "function" # the function is executed inside $(), so you can have pipes | here
-          bash: "git branch --format='%(refname:short)'"
-          fish: "git branch --format='%(refname:short)'"
-          zsh: "git branch --format='%(refname:short)'"
-        example: "git push origin main"
+---
 
+### 5. Subcommands
+
+```yaml
+commands:
   - name: "remote"
-    commands: # sub-commands
+    commands:
       - name: "add"
         usage: "remote add <name> <url>"
         arguments:
@@ -105,36 +151,46 @@ commands:
             name: "name"
             completion:
               type: "none"
-            example: "git remote add upstream"
 
           - named: false
             name: "url"
             completion:
               type: "none"
-            example: "git remote add upstream https://github.com/..."
 ```
 
-### State
+Subcommands are defined just like commands, but nested under a `commands` key.
 
-Not everything is implemented yet (or even possible in all generators).
+---
 
-What is missing:
+## ✅ Currently Working
 
-- Man pages
-- arguments:chainable (does nothing/ignored. Do completion engines even support this?)
-- equal-value-separator and space-value-separator (used sometimes, but not really enforced)
-- A mechanism to not offer some completion if another option is already in the command line.
-- completion:type="folder" is the same as "file" for now
+* Command & subcommand completion
+* Named & positional arguments
+* Static, file, folder, and dynamic completions
+* Nesting of commands without limit
+* Per-shell dynamic completion commands
 
-I did not really test positional arguments. They are implemented though.
+---
 
-What is known to work:
+## 🚀 Example: Git Clone
 
-- Command completion.
-- Positional arguments (In ZSH, a command that accepts subcommands cannot have positional arguments,
-  they will be ignored. In BASH and Fish completion for subcommands and positional arguments are
-  joined).
-- Named argument completion.
-- Named argument's value (all completion:type have been tested, and with the exception that "folder"
-  and "file" do the same thing, they work)
-- Subcommands (command nesting).
+```yaml
+name: "git"
+commands:
+  - name: "clone"
+    arguments:
+      - named: false
+        name: "repository"
+        completion:
+          type: "static"
+          values: ["https://github.com/user/repo.git"]
+      - named: true
+        name: "origin"
+        short-name: "o"
+```
+
+Generates:
+
+* `git <TAB>` → suggests `clone`.
+* `git clone <TAB>` → suggests predefined repository URL.
+* `git clone https://... -<TAB>` → suggests `-o` and `--origin`.

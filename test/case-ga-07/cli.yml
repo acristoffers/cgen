@@ -1,0 +1,11 @@
+---
+name: "cli"
+arguments:
+  - named: true
+    name: "verbose"
+    long-value-separator: "equal"
+    completion:
+      type: "function"
+      bash: "printf 'a\nb\nc'"
+      fish: "printf 'a\nb\nc'"
+      zsh: "printf 'a\nb\nc'"

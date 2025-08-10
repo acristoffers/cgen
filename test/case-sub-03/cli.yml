@@ -1,0 +1,12 @@
+---
+name: "cli"
+commands:
+  - name: cmd
+    commands:
+      - name: sub
+        arguments:
+          - named: true
+            name: opt
+            completion:
+              type: static
+              values: ["a", "b", "c"]

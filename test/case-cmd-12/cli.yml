@@ -1,0 +1,10 @@
+---
+name: "cli"
+commands:
+  - name: "cmd"
+    arguments:
+      - named: true
+        name: "opt"
+arguments:
+  - named: true
+    name: "verbose"

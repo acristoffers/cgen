@@ -1,0 +1,11 @@
+---
+name: "cli"
+commands:
+  - name: cmd
+    arguments:
+      - named: true
+        name: "opt1"
+      - named: true
+        name: "opt2"
+      - named: true
+        name: "opt3"

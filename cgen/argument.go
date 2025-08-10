@@ -9,11 +9,11 @@ type Argument struct {
 	// If true, options are single-dash: -verbose, and, if false, they are --verbose.
 	SingleDashLong bool `yaml:"single-dash-long"`
 
-	// If true, '--flag=value' is accepted.
-	EqualValueSeparator bool `yaml:"equal-value-separator"`
+	// How to separate --long-options from their values: "space", "equal", "both"
+	LongValueSeparator string `yaml:"long-value-separator"`
 
-	// If true, '--flag value' is accepted.
-	SpaceValueSeparator bool `yaml:"space-value-separator"`
+	// How to separate short options (-v) from their values: "space", "attached", "both"
+	ShortValueSeparator string `yaml:"short-value-separator"`
 
 	// The name of the argument. If Named==true, for a verbose flag, "verbose" makes "--verbose" or
 	// "-verbose". If Named==false, it's the name of the positional argument, e.q.:
@@ -25,13 +25,6 @@ type Argument struct {
 
 	// Short description of the argument validate:"required".
 	ShortDescription string `yaml:"short-description"`
-
-	// Whether the short-version can be part of a chain, like "-hal" == "-h -a -l".
-	Chainable bool `yaml:"chainable"`
-
-	// If multiple flags have the same value for ExclusiveGroup, they won't be suggested if one is
-	// already present.
-	ExclusiveGroup string `yaml:"exclusive-group"`
 
 	// The completion to suggest.
 	Completion Completion `yaml:"completion"`
@@ -55,9 +48,8 @@ type Argument struct {
 func (i *Argument) UnmarshalYAML(unmarshal func(any) error) error {
 	i.Named = false
 	i.SingleDashLong = false
-	i.EqualValueSeparator = false
-	i.SpaceValueSeparator = true
-	i.Chainable = true
+	i.LongValueSeparator = "space"
+	i.ShortValueSeparator = "space"
 	i.Hidden = false
 	i.Completion.Type = "none"
 

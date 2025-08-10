@@ -1,0 +1,1 @@
+complete value of global positional argument (function)

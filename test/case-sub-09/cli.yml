@@ -1,0 +1,13 @@
+---
+name: "cli"
+commands:
+  - name: cmd
+    commands:
+      - name: sub
+        arguments:
+          - named: true
+            short-name: "v"
+            short-value-separator: "attached"
+            completion:
+              type: "static"
+              values: ["a", "b", "c"]

@@ -1,0 +1,6 @@
+---
+name: "cli"
+arguments:
+  - named: true
+    name: "verbose"
+    short-name: "v"

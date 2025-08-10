@@ -1,0 +1,8 @@
+---
+name: "cli"
+commands:
+  - name: cmd
+    commands:
+    - name: cmd1
+    - name: cmd2
+    - name: cmd3

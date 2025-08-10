@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/acristoffers/cgen/cgen"
 	"al.essio.dev/pkg/shellescape"
+	"github.com/acristoffers/cgen/cgen"
 )
 
 func GenerateFishCompletions(cli *cgen.CLI) error {
@@ -58,7 +58,7 @@ func formatArgumentFish(cliName string, arg cgen.Argument, condition string) str
 	}
 
 	if arg.Named {
-		if !arg.EqualValueSeparator || arg.SpaceValueSeparator {
+		if arg.LongValueSeparator == "space" && arg.Completion.Type != "none" {
 			b.WriteString(" -r")
 		}
 
@@ -116,6 +116,10 @@ func formatCommandFish(cliName string, cmd cgen.Command) string {
 		}
 		b.WriteString("\n")
 
+		for _, arg := range cmd.Arguments {
+			b.WriteString(formatArgumentFish(cliName, arg, ""))
+		}
+
 		for _, subcmd := range cmd.Subcommands {
 			b.WriteString(formatSubcommandFish(cliName, []string{name}, cmd, subcmd))
 		}
@@ -157,6 +161,14 @@ func formatSubcommandFish(cliName string, path []string, parent cgen.Command, su
 			b.WriteString(fmt.Sprintf(" -d %s", shellescape.Quote(subcmd.LongDescription)))
 		}
 		b.WriteString("\n")
+
+		andSeen = append(andSeen, fmt.Sprintf("__fish_seen_subcommand_from %s", subcmd.Name))
+		for _, alias := range subcmd.Aliases {
+			andSeen = append(andSeen, fmt.Sprintf("__fish_seen_subcommand_from %s", alias))
+		}
+		for _, arg := range subcmd.Arguments {
+			b.WriteString(formatArgumentFish(cliName, arg, strings.Join(andSeen, "; and ")))
+		}
 
 		for _, nested := range subcmd.Subcommands {
 			b.WriteString(formatSubcommandFish(cliName, append(path, name), subcmd, nested))

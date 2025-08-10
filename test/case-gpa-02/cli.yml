@@ -1,0 +1,10 @@
+---
+name: "cli"
+arguments:
+  - named: false
+    name: "verbose" # a name is required nonetheless
+    completion:
+      type: "function"
+      bash: "printf 'a\nb\nc'"
+      fish: "printf 'a\nb\nc'"
+      zsh: "printf 'a\nb\nc'"

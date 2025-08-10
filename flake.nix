@@ -42,17 +42,35 @@
             runHook postInstall
           '';
         };
+        packages.cgen-tests = pkgs.stdenvNoCC.mkDerivation {
+          name = "cgen-tests";
+          version = "tests";
+          src = ./test;
+          dontConfigure = true;
+          dontInstall = true;
+          buildPhase = ''
+            mkdir -p $out
+            cp -r * $out/
+            echo "#!/usr/bin/env fish" >> $out/run-tests
+            echo "fish $out/run.fish ${packages.cgen}/bin/cgen" >> $out/run-tests
+            chmod +x $out/run-tests
+          '';
+        };
         apps = rec {
           cgen = { type = "app"; program = "${packages.cgen}/bin/cgen"; };
+          cgen-tests = { type = "app"; program = "${packages.cgen-tests}/run-tests"; };
           default = cgen;
         };
         devShell = pkgs.mkShell {
           packages = with pkgs; [
+            bash
             bat
             busybox
+            fish
             git
             go
             man
+            zsh
           ];
         };
       }

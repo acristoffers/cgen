@@ -1,0 +1,11 @@
+---
+name: "cli"
+arguments:
+  - named: true
+    short-name: "v"
+    short-value-separator: "attached"
+    completion:
+      type: "function"
+      bash: "printf 'a\nb\nc'"
+      fish: "printf 'a\nb\nc'"
+      zsh: "printf 'a\nb\nc'"

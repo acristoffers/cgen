@@ -1,0 +1,1 @@
+complete value of short named argument without space (static)

@@ -1,0 +1,1 @@
+complete value of subcommand named argument with = (static)

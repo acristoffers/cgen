@@ -1,0 +1,1 @@
+complete value of command named argument (static)

@@ -1,0 +1,8 @@
+---
+name: "cli"
+arguments:
+  - named: true
+    name: "verbose"
+    completion:
+      type: "static"
+      values: ["a", "b", "c"]

@@ -3,6 +3,7 @@ package generators
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -94,7 +95,7 @@ func writeZshCompletions(cli *cgen.CLI, w io.Writer) error {
 			iw.Indent(func() error {
 				iw.WriteLine("case ${words[1]} in\n")
 				for _, cmd := range cli.Commands {
-					writeZshCommandTree(iw, &cmd)
+					writeZshCommandTree(iw, cli.Arguments, &cmd)
 				}
 				iw.WriteLine("esac\n")
 				return nil
@@ -157,27 +158,51 @@ func generateZshArgument(arg cgen.Argument) string {
 	comp := ""
 	switch arg.Completion.Type {
 	case "file", "folder":
-		comp = fmt.Sprintf(":%s:_files", arg.Name)
+		comp = "_files"
 	case "static":
-		comp = fmt.Sprintf(":%s:(%s)", arg.Name, shellescape.QuoteCommand(arg.Completion.Values))
+		comp = fmt.Sprintf("(%s)", shellescape.QuoteCommand(arg.Completion.Values))
 	case "function":
-		comp = fmt.Sprintf(":%s:_arg_%s", arg.Name, arg.Name)
+		comp = fmt.Sprintf("_arg_%s", arg.Name)
 	}
 	dash := "-"
 	if !arg.SingleDashLong {
 		dash += "-"
 	}
 	desc := strings.ReplaceAll(arg.ShortDescription, "'", "'\"'\"'")
+	longSeparatorSuffix := ""
+	switch arg.LongValueSeparator {
+	case "space":
+	case "equal":
+		longSeparatorSuffix = "=-"
+	case "both":
+		longSeparatorSuffix = "="
+	default:
+		log.Fatalf("The option %s is not valid for long-value-separator. Accepted values are space, equal and both", arg.LongValueSeparator)
+		os.Exit(1)
+	}
+	name := arg.Name + longSeparatorSuffix
+	shortSeparatorSuffix := ""
+	switch arg.ShortValueSeparator {
+	case "space":
+	case "attached":
+		shortSeparatorSuffix = "-"
+	case "both":
+		shortSeparatorSuffix = "+"
+	default:
+		log.Fatalf("The option %s is not valid for short-value-separator. Accepted values are space, equal and both", arg.ShortValueSeparator)
+		os.Exit(1)
+	}
+	shortName := arg.ShortName + shortSeparatorSuffix
 	if arg.Name != "" && arg.ShortName != "" {
-		return fmt.Sprintf("'(-%s %s%s)'{-%s,%s%s}'[%s]%s'", arg.ShortName, dash, arg.Name, arg.ShortName, dash, arg.Name, desc, comp)
+		return fmt.Sprintf("'(-%s %s%s)'{-%s,%s%s}'[%s]:%s:%s'", shortName, dash, name, arg.ShortName, dash, name, desc, arg.Name, comp)
 	} else if arg.Name != "" {
-		return fmt.Sprintf("'%s%s[%s]%s'", dash, arg.Name, desc, comp)
+		return fmt.Sprintf("'%s%s[%s]:%s:%s'", dash, name, desc, arg.Name, comp)
 	} else {
-		return fmt.Sprintf("'-%s[%s]%s'", arg.ShortName, desc, comp)
+		return fmt.Sprintf("'-%s[%s]:%s:%s'", shortName, desc, arg.ShortName, comp)
 	}
 }
 
-func writeZshCommandTree(w *indentedWriter, cmd *cgen.Command) error {
+func writeZshCommandTree(w *indentedWriter, global_arguments []cgen.Argument, cmd *cgen.Command) error {
 	if len(cmd.Arguments) == 0 && len(cmd.Subcommands) == 0 {
 		return nil
 	}
@@ -201,6 +226,11 @@ func writeZshCommandTree(w *indentedWriter, cmd *cgen.Command) error {
 				}
 			}
 			for _, arg := range cmd.Arguments {
+				if arg.Named {
+					args = append(args, generateZshArgument(arg))
+				}
+			}
+			for _, arg := range global_arguments {
 				if arg.Named {
 					args = append(args, generateZshArgument(arg))
 				}
@@ -229,7 +259,7 @@ func writeZshCommandTree(w *indentedWriter, cmd *cgen.Command) error {
 						w.WriteLine("case ${words[1]} in\n")
 						w.Indent(func() error {
 							for _, sub := range cmd.Subcommands {
-								writeZshCommandTree(w, &sub)
+								writeZshCommandTree(w, global_arguments, &sub)
 							}
 							return nil
 						})

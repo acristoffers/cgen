@@ -3,6 +3,7 @@ package generators
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -56,7 +57,8 @@ index_of() {
 	// _complete_command() stub
 	iw.WriteLine(fmt.Sprintf("_complete_command_%s() {\n", cli.Name))
 	iw.Indent(func() error {
-		iw.WriteLine("prev=${COMP_WORDS[COMP_CWORD-1]}\n")
+		writeBashArray(iw, "global_options", collectArguments(cli.Arguments))
+		iw.WriteLine("prev=${COMP_WORDS[$((COMP_CWORD-1))]}\n")
 		for _, cmd := range cli.Commands {
 			if err := completeCommandBash(iw, cli, &cmd); err != nil {
 				return err
@@ -83,6 +85,18 @@ index_of() {
 			return nil
 		})
 		iw.WriteLine("done\n")
+
+		iw.WriteLine("prev=''\n")
+		iw.WriteLine("if [ $COMP_CWORD -gt 0 ]; then\n")
+		iw.Indent(func() error {
+			iw.WriteLine("prev=${COMP_WORDS[$((COMP_CWORD-1))]}\n")
+			return nil
+		})
+		iw.WriteLine("fi\n")
+		if err := writeArgumentCaseSwitch(iw, cli.Arguments); err != nil {
+			return err
+		}
+
 		iw.WriteLine("completions=(\"${commands[@]}\" \"${global_options[@]}\")\n")
 		iw.WriteLine("COMPREPLY=( $(compgen -W \"${completions[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
 		return nil
@@ -105,14 +119,36 @@ func collectArguments(args []cgen.Argument) []string {
 	for _, arg := range args {
 		if arg.Named {
 			if arg.Name != "" {
+				name := ""
 				if arg.SingleDashLong {
-					out = append(out, "-"+arg.Name)
+					name = "-" + arg.Name
 				} else {
-					out = append(out, "--"+arg.Name)
+					name = "--" + arg.Name
+				}
+				switch arg.LongValueSeparator {
+				case "space":
+					out = append(out, name)
+				case "equal":
+					out = append(out, name+"=")
+				case "both":
+					out = append(out, name)
+					out = append(out, name+"=")
+				default:
+					log.Fatalf("The option %s is not valid for long-value-separator. Accepted values are space, equal and both", arg.LongValueSeparator)
+					os.Exit(1)
 				}
 			}
 			if arg.ShortName != "" {
 				out = append(out, "-"+arg.ShortName)
+			}
+		} else {
+			switch arg.Completion.Type {
+			case "static":
+				for _, value := range arg.Completion.Values {
+					out = append(out, shellescape.Quote(value))
+				}
+			case "function":
+				out = append(out, fmt.Sprintf("$(%s)", arg.Completion.Bash))
 			}
 		}
 	}
@@ -201,7 +237,15 @@ func completeSubcommandBash(w *indentedWriter, path []string, subcmd *cgen.Comma
 }
 
 func writeArgumentCaseSwitch(w *indentedWriter, args []cgen.Argument) error {
+	switch_prev_written := false
+	w.WriteLine("cur=${COMP_WORDS[$COMP_CWORD]}\n")
+	w.WriteLine("case \"$cur\" in\n")
+	goto swith_body
+
+switch_prev:
+	switch_prev_written = true
 	w.WriteLine("case \"$prev\" in\n")
+swith_body:
 	for _, arg := range args {
 		if !arg.Named {
 			continue
@@ -210,39 +254,75 @@ func writeArgumentCaseSwitch(w *indentedWriter, args []cgen.Argument) error {
 		if arg.ShortName != "" {
 			keys = append(keys, "-"+arg.ShortName)
 		}
+		name := ""
 		if arg.Name != "" {
 			if arg.SingleDashLong {
-				keys = append(keys, "-"+arg.Name)
+				name = "-" + arg.Name
 			} else {
-				keys = append(keys, "--"+arg.Name)
+				name = "--" + arg.Name
+			}
+			switch arg.LongValueSeparator {
+			case "space":
+				if switch_prev_written {
+					keys = append(keys, name)
+				}
+			case "equal":
+				if !switch_prev_written {
+					keys = append(keys, name+"=")
+				}
+			case "both":
+				if switch_prev_written {
+					keys = append(keys, name)
+				}
+				if !switch_prev_written {
+					keys = append(keys, name+"=")
+				}
+			default:
+				log.Fatalf("The option %s is not valid for long-value-separator. Accepted values are space, equal and both", arg.LongValueSeparator)
+				os.Exit(1)
 			}
 		}
 		if arg.Completion.Type != "none" && len(keys) > 0 {
-			w.WriteLine(fmt.Sprintf("%s)\n", strings.Join(keys, "|")))
-			err := w.Indent(func() error {
-				switch arg.Completion.Type {
-				case "static":
-					escaped := shellescape.QuoteCommand(arg.Completion.Values)
-					w.WriteLine(fmt.Sprintf("values=(%s)\n", escaped))
-					w.WriteLine("COMPREPLY=( $(compgen -W \"${values[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
-				case "file":
-					w.WriteLine("COMPREPLY=( $(compgen -f -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
-				case "folder":
-					w.WriteLine("COMPREPLY=( $(compgen -d -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
-				case "function":
-					w.WriteLine(fmt.Sprintf("values=$(%s)\n", arg.Completion.Bash))
-					w.WriteLine("COMPREPLY=( $(compgen -W \"${values[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+			for _, key := range keys {
+				w.WriteLine(fmt.Sprintf("%s)\n", key))
+				err := w.Indent(func() error {
+					switch arg.Completion.Type {
+					case "static":
+						escaped := shellescape.QuoteCommand(arg.Completion.Values)
+						if !switch_prev_written {
+							xs := []string{}
+							for _, value := range arg.Completion.Values {
+								xs = append(xs, key+value)
+							}
+							escaped = strings.Join(xs, " ")
+						}
+						w.WriteLine(fmt.Sprintf("values=(%s)\n", escaped))
+						w.WriteLine("COMPREPLY=( $(compgen -W \"${values[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+					case "file":
+						w.WriteLine("COMPREPLY=( $(compgen -f -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+					case "folder":
+						w.WriteLine("COMPREPLY=( $(compgen -d -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+					case "function":
+						w.WriteLine(fmt.Sprintf("values=($(%s))\n", arg.Completion.Bash))
+						if !switch_prev_written {
+							w.WriteLine(fmt.Sprintf("values=(${values[@]/#/%s})\n", key))
+						}
+						w.WriteLine("COMPREPLY=( $(compgen -W \"${values[*]}\" -- \"${COMP_WORDS[COMP_CWORD]}\") )\n")
+					}
+					w.WriteLine("return\n")
+					return nil
+				})
+				if err != nil {
+					return err
 				}
-				w.WriteLine("return\n")
-				return nil
-			})
-			if err != nil {
-				return err
+				w.WriteLine(";;\n")
 			}
-			w.WriteLine(";;\n")
 		}
 	}
 	w.WriteLine("esac\n")
+	if !switch_prev_written {
+		goto switch_prev
+	}
 
 	w.WriteLine("case \"$pos\" in\n")
 	w.Indent(func() error {
