@@ -1,6 +1,6 @@
 # cgen
 
-Generate shell completions for Fish, Bash, and ZSH from a single YAML file.
+Generate shell completions for Fish, Bash, and ZSH and man-pages from a single YAML file.
 
 `cgen` lets you define your CLI interface once in YAML, and instantly generate shell completion
 scripts for multiple shells. No more hand-writing separate completion files for every shell.
