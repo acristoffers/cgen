@@ -31,6 +31,10 @@ type Argument struct {
 
 	///// Manpages /////
 
+	// Deprecated defines, if this command is deprecated. The text will be should in the man page.
+	// (should be short)
+	Deprecated string `yaml:"deprecated"`
+
 	// Name to display as value placeholder. Will be made UPPERCASE.
 	ValueLabel string `yaml:"value-label"`
 

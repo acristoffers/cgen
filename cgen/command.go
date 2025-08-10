@@ -12,13 +12,14 @@ type Command struct {
 	// List of accepted arguments.
 	Arguments []Argument `yaml:"arguments"`
 
-	// Deprecated defines, if this command is deprecated and should print this string when used.
-	Deprecated string `yaml:"deprecated"`
-
 	// For nesting commands.
 	Subcommands []Command `yaml:"commands"`
 
 	///// Manpages /////
+
+	// Deprecated defines, if this command is deprecated. The text will be should in the man page.
+	// (should be short)
+	Deprecated string `yaml:"deprecated"`
 
 	// If this command is hidden and should NOT show up in the list of available commands.
 	Hidden bool `yaml:"hidden"`
