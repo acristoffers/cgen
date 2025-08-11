@@ -114,6 +114,9 @@ func writeManPage(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Argument, cmds [
 				fmt.Fprint(file, ".B DEPRECATED\n")
 				fmt.Fprintf(file, "%s\n", cmd.Deprecated)
 			}
+			if cmd.ShortDescription != "" {
+				fmt.Fprintf(file, "%s\n", cmd.ShortDescription)
+			}
 		}
 	}
 	return nil
