@@ -38,12 +38,6 @@ func writeFishCompletions(cli *cgen.CLI, w io.Writer) error {
 		if _, err := fmt.Fprint(w, formatCommandFish(cli.Name, cmd)); err != nil {
 			return err
 		}
-		for _, arg := range cmd.Arguments {
-			condition := fmt.Sprintf("__fish_seen_subcommand_from %s", cmd.Name)
-			if _, err := fmt.Fprint(w, formatArgumentFish(cli.Name, arg, condition)); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil
@@ -117,7 +111,7 @@ func formatCommandFish(cliName string, cmd cgen.Command) string {
 		b.WriteString("\n")
 
 		for _, arg := range cmd.Arguments {
-			b.WriteString(formatArgumentFish(cliName, arg, ""))
+			b.WriteString(formatArgumentFish(cliName, arg, fmt.Sprintf("__fish_seen_subcommand_from %s", name)))
 		}
 
 		for _, subcmd := range cmd.Subcommands {
