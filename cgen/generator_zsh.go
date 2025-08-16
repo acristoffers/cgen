@@ -1,4 +1,4 @@
-package generators
+package cgen
 
 import (
 	"fmt"
@@ -9,10 +9,9 @@ import (
 	"strings"
 
 	"al.essio.dev/pkg/shellescape"
-	"github.com/acristoffers/cgen/cgen"
 )
 
-func GenerateZshCompletions(cli *cgen.CLI) error {
+func GenerateZshCompletions(cli *CLI) error {
 	dir := filepath.Join("share", "zsh", "completions")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("could not create directory: %w", err)
@@ -28,7 +27,7 @@ func GenerateZshCompletions(cli *cgen.CLI) error {
 	return writeZshCompletions(cli, file)
 }
 
-func writeZshCompletions(cli *cgen.CLI, w io.Writer) error {
+func writeZshCompletions(cli *CLI, w io.Writer) error {
 	iw := newIndentedWriter(w, "  ")
 
 	iw.WriteLine(fmt.Sprintf("#compdef %s\n", cli.Name))
@@ -110,8 +109,8 @@ func writeZshCompletions(cli *cgen.CLI, w io.Writer) error {
 	return nil
 }
 
-func collectPositionalArgs(args []cgen.Argument) []cgen.Argument {
-	var pos []cgen.Argument
+func collectPositionalArgs(args []Argument) []Argument {
+	var pos []Argument
 	for _, arg := range args {
 		if !arg.Named {
 			pos = append(pos, arg)
@@ -120,7 +119,7 @@ func collectPositionalArgs(args []cgen.Argument) []cgen.Argument {
 	return pos
 }
 
-func formatZshPositional(count int, arg cgen.Argument) string {
+func formatZshPositional(count int, arg Argument) string {
 	comp := ""
 	switch arg.Completion.Type {
 	case "none":
@@ -135,7 +134,7 @@ func formatZshPositional(count int, arg cgen.Argument) string {
 	return fmt.Sprintf(`"%d:%s:%s"`, count, arg.Name, comp)
 }
 
-func writeZshFunctionCompletions(w *indentedWriter, cmd *cgen.Command) error {
+func writeZshFunctionCompletions(w *indentedWriter, cmd *Command) error {
 	for _, arg := range cmd.Arguments {
 		if arg.Completion.Type == "function" {
 			w.WriteLine(fmt.Sprintf("_arg_%s() {\n", arg.Name))
@@ -154,7 +153,7 @@ func writeZshFunctionCompletions(w *indentedWriter, cmd *cgen.Command) error {
 	return nil
 }
 
-func generateZshArgument(arg cgen.Argument) string {
+func generateZshArgument(arg Argument) string {
 	comp := ""
 	switch arg.Completion.Type {
 	case "file", "folder":
@@ -202,7 +201,7 @@ func generateZshArgument(arg cgen.Argument) string {
 	}
 }
 
-func writeZshCommandTree(w *indentedWriter, global_arguments []cgen.Argument, cmd *cgen.Command) error {
+func writeZshCommandTree(w *indentedWriter, global_arguments []Argument, cmd *Command) error {
 	if len(cmd.Arguments) == 0 && len(cmd.Subcommands) == 0 {
 		return nil
 	}

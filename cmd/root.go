@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/acristoffers/cgen/cgen"
-	"github.com/acristoffers/cgen/cgen/generators"
 	"github.com/go-playground/validator/v10"
 	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
@@ -78,22 +77,22 @@ var RootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err := generators.GenerateBashCompletions(&cli); err != nil {
+		if err := cgen.GenerateBashCompletions(&cli); err != nil {
 			log.Fatal("Error generating BASH completion: ", err.Error())
 			os.Exit(1)
 		}
 
-		if err := generators.GenerateFishCompletions(&cli); err != nil {
+		if err := cgen.GenerateFishCompletions(&cli); err != nil {
 			log.Fatal("Error generating Fish completion: ", err.Error())
 			os.Exit(1)
 		}
 
-		if err := generators.GenerateZshCompletions(&cli); err != nil {
+		if err := cgen.GenerateZshCompletions(&cli); err != nil {
 			log.Fatal("Error generating ZSH completion: ", err.Error())
 			os.Exit(1)
 		}
 
-		if err := generators.GenerateManPage(&cli); err != nil {
+		if err := cgen.GenerateManPage(&cli); err != nil {
 			log.Fatal("Error generating man pages: ", err.Error())
 			os.Exit(1)
 		}

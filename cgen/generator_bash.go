@@ -1,4 +1,4 @@
-package generators
+package cgen
 
 import (
 	"fmt"
@@ -10,10 +10,9 @@ import (
 	"strings"
 
 	"al.essio.dev/pkg/shellescape"
-	"github.com/acristoffers/cgen/cgen"
 )
 
-func GenerateBashCompletions(cli *cgen.CLI) error {
+func GenerateBashCompletions(cli *CLI) error {
 	dir := filepath.Join("share", "bash", "completions")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("could not create directory: %w", err)
@@ -29,7 +28,7 @@ func GenerateBashCompletions(cli *cgen.CLI) error {
 	return writeBashCompletions(cli, file)
 }
 
-func writeBashCompletions(cli *cgen.CLI, w io.Writer) error {
+func writeBashCompletions(cli *CLI, w io.Writer) error {
 	iw := newIndentedWriter(w, "  ")
 
 	// Write helper function
@@ -114,7 +113,7 @@ func writeBashArray(w *indentedWriter, name string, values []string) {
 	w.WriteLine(fmt.Sprintf("%s=(%s)\n", name, strings.Join(escaped, " ")))
 }
 
-func collectArguments(args []cgen.Argument) []string {
+func collectArguments(args []Argument) []string {
 	out := []string{}
 	for _, arg := range args {
 		if arg.Named {
@@ -155,7 +154,7 @@ func collectArguments(args []cgen.Argument) []string {
 	return out
 }
 
-func collectCommands(cmds []cgen.Command) []string {
+func collectCommands(cmds []Command) []string {
 	out := []string{}
 	for _, cmd := range cmds {
 		out = append(out, cmd.Name)
@@ -164,7 +163,7 @@ func collectCommands(cmds []cgen.Command) []string {
 	return out
 }
 
-func completeCommandBash(w *indentedWriter, cli *cgen.CLI, cmd *cgen.Command) error {
+func completeCommandBash(w *indentedWriter, cli *CLI, cmd *Command) error {
 	cmdNames := append([]string{cmd.Name}, cmd.Aliases...)
 
 	for _, name := range cmdNames {
@@ -200,7 +199,7 @@ func completeCommandBash(w *indentedWriter, cli *cgen.CLI, cmd *cgen.Command) er
 	return nil
 }
 
-func completeSubcommandBash(w *indentedWriter, path []string, subcmd *cgen.Command, globalArgs []cgen.Argument) error {
+func completeSubcommandBash(w *indentedWriter, path []string, subcmd *Command, globalArgs []Argument) error {
 	names := append([]string{subcmd.Name}, subcmd.Aliases...)
 
 	for _, name := range names {
@@ -236,7 +235,7 @@ func completeSubcommandBash(w *indentedWriter, path []string, subcmd *cgen.Comma
 	return nil
 }
 
-func writeArgumentCaseSwitch(w *indentedWriter, args []cgen.Argument) error {
+func writeArgumentCaseSwitch(w *indentedWriter, args []Argument) error {
 	switch_prev_written := false
 	w.WriteLine("cur=${COMP_WORDS[$COMP_CWORD]}\n")
 	w.WriteLine("case \"$cur\" in\n")

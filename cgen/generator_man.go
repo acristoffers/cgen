@@ -1,4 +1,4 @@
-package generators
+package cgen
 
 import (
 	"fmt"
@@ -7,11 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/acristoffers/cgen/cgen"
 )
 
-func GenerateManPage(cli *cgen.CLI) error {
+func GenerateManPage(cli *CLI) error {
 	dir := filepath.Join("share", "man", "man1")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("could not create directory: %w", err)
@@ -33,7 +31,7 @@ func GenerateManPage(cli *cgen.CLI) error {
 	return nil
 }
 
-func generateManPageForCommand(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Argument, cmds []cgen.Command, parents []string) error {
+func generateManPageForCommand(cli *CLI, cmd *Command, args []Argument, cmds []Command, parents []string) error {
 	path := filepath.Join("share", "man", "man1", fmt.Sprintf("%s.1", strings.Join(parents, "-")))
 	file, err := os.Create(path)
 	if err != nil {
@@ -53,7 +51,7 @@ func generateManPageForCommand(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Arg
 	return nil
 }
 
-func writeManPage(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Argument, cmds []cgen.Command, parents []string, file io.Writer) error {
+func writeManPage(cli *CLI, cmd *Command, args []Argument, cmds []Command, parents []string, file io.Writer) error {
 	fmt.Fprintf(file, ".TH %s 1 \"%s\" \"%s\"\n", strings.Join(parents, "-"), time.Now().Format("02-Jan-2006"), cli.Version)
 	fmt.Fprint(file, ".SH NAME\n")
 	if cmd == nil {
@@ -122,7 +120,7 @@ func writeManPage(cli *cgen.CLI, cmd *cgen.Command, args []cgen.Argument, cmds [
 	return nil
 }
 
-func formatManPositionalArguments(args []cgen.Argument) []string {
+func formatManPositionalArguments(args []Argument) []string {
 	xs := []string{}
 	for _, arg := range args {
 		if !arg.Named && !arg.Hidden {
@@ -136,7 +134,7 @@ func formatManPositionalArguments(args []cgen.Argument) []string {
 	return xs
 }
 
-func formatManArguments(args []cgen.Argument) []string {
+func formatManArguments(args []Argument) []string {
 	xs := []string{}
 	for _, arg := range args {
 		if !arg.Named || arg.Hidden {
@@ -147,7 +145,7 @@ func formatManArguments(args []cgen.Argument) []string {
 	return xs
 }
 
-func formatManArgument(arg *cgen.Argument, separator string) string {
+func formatManArgument(arg *Argument, separator string) string {
 	str := ""
 	if arg.ShortName != "" {
 		str = "\\fB\\-" + arg.ShortName + "\\fR"

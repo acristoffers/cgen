@@ -1,4 +1,4 @@
-package generators
+package cgen
 
 import (
 	"fmt"
@@ -8,10 +8,9 @@ import (
 	"strings"
 
 	"al.essio.dev/pkg/shellescape"
-	"github.com/acristoffers/cgen/cgen"
 )
 
-func GenerateFishCompletions(cli *cgen.CLI) error {
+func GenerateFishCompletions(cli *CLI) error {
 	dir := filepath.Join("share", "fish", "completions")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("could not create directory: %w", err)
@@ -27,7 +26,7 @@ func GenerateFishCompletions(cli *cgen.CLI) error {
 	return writeFishCompletions(cli, file)
 }
 
-func writeFishCompletions(cli *cgen.CLI, w io.Writer) error {
+func writeFishCompletions(cli *CLI, w io.Writer) error {
 	for _, arg := range cli.Arguments {
 		if _, err := fmt.Fprint(w, formatArgumentFish(cli.Name, arg, "")); err != nil {
 			return err
@@ -43,7 +42,7 @@ func writeFishCompletions(cli *cgen.CLI, w io.Writer) error {
 	return nil
 }
 
-func formatArgumentFish(cliName string, arg cgen.Argument, condition string) string {
+func formatArgumentFish(cliName string, arg Argument, condition string) string {
 	var b strings.Builder
 
 	b.WriteString(fmt.Sprintf("complete -c %s", cliName))
@@ -99,7 +98,7 @@ func formatArgumentFish(cliName string, arg cgen.Argument, condition string) str
 	return b.String()
 }
 
-func formatCommandFish(cliName string, cmd cgen.Command) string {
+func formatCommandFish(cliName string, cmd Command) string {
 	var b strings.Builder
 
 	names := append([]string{cmd.Name}, cmd.Aliases...)
@@ -122,7 +121,7 @@ func formatCommandFish(cliName string, cmd cgen.Command) string {
 	return b.String()
 }
 
-func formatSubcommandFish(cliName string, path []string, parent cgen.Command, subcmd cgen.Command) string {
+func formatSubcommandFish(cliName string, path []string, parent Command, subcmd Command) string {
 	var b strings.Builder
 
 	names := append([]string{subcmd.Name}, subcmd.Aliases...)
