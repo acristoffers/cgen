@@ -157,11 +157,11 @@ func generateZshArgument(arg Argument) string {
 	comp := ""
 	switch arg.Completion.Type {
 	case "file", "folder":
-		comp = "_files"
+		comp = ":_files"
 	case "static":
-		comp = fmt.Sprintf("(%s)", shellescape.QuoteCommand(arg.Completion.Values))
+		comp = fmt.Sprintf(":(%s)", shellescape.QuoteCommand(arg.Completion.Values))
 	case "function":
-		comp = fmt.Sprintf("_arg_%s", arg.Name)
+		comp = fmt.Sprintf(":_arg_%s", arg.Name)
 	}
 	dash := "-"
 	if !arg.SingleDashLong {
@@ -193,11 +193,11 @@ func generateZshArgument(arg Argument) string {
 	}
 	shortName := arg.ShortName + shortSeparatorSuffix
 	if arg.Name != "" && arg.ShortName != "" {
-		return fmt.Sprintf("'(-%s %s%s)'{-%s,%s%s}'[%s]:%s:%s'", shortName, dash, name, arg.ShortName, dash, name, desc, arg.Name, comp)
+		return fmt.Sprintf("'(-%s %s%s)'{-%s,%s%s}'[%s]:%s%s'", shortName, dash, name, arg.ShortName, dash, name, desc, arg.Name, comp)
 	} else if arg.Name != "" {
-		return fmt.Sprintf("'%s%s[%s]:%s:%s'", dash, name, desc, arg.Name, comp)
+		return fmt.Sprintf("'%s%s[%s]:%s%s'", dash, name, desc, arg.Name, comp)
 	} else {
-		return fmt.Sprintf("'-%s[%s]:%s:%s'", shortName, desc, arg.ShortName, comp)
+		return fmt.Sprintf("'-%s[%s]:%s%s'", shortName, desc, arg.ShortName, comp)
 	}
 }
 

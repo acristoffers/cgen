@@ -11,6 +11,7 @@
 9. complete value of short named argument (function)
 10. complete value of short named argument without space (static)
 11. complete value of short named argument without space (function)
+12. complete argument after another argument
 
 ## Notes
 
