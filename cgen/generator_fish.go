@@ -70,7 +70,11 @@ func formatArgumentFish(cliName string, arg Argument, condition string) string {
 			}
 		}
 	} else {
-		b.WriteString(" -x")
+		if arg.Completion.Type == "file" || arg.Completion.Type == "folder" {
+			b.WriteString(" -r")
+		} else {
+			b.WriteString(" -x")
+		}
 	}
 
 	desc := arg.ShortDescription
