@@ -1,10 +1,7 @@
 ---
 name: Release Go Binaries
 
-on:
-  push:
-    tags:
-      - 'v*'
+on: [push, pull_request]
 
 jobs:
   build:
@@ -13,10 +10,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: 'stable'
 
@@ -27,16 +24,14 @@ jobs:
       - name: Build binary
         run: |
           mkdir -p dist
-          for os in linux windows darwin; do
-            ext=""
-            if [ "${os}" = "windows" ]; then ext=".exe"; fi
+          for os in linux darwin; do
             for arch in amd64 arm64; do
-              GOOS=${os} GOARCH=${arch} go build -ldflags="-s -w" -o "dist/cgen-$os-$arch$ext" .
+              GOOS=${os} GOARCH=${arch} go build -ldflags="-s -w" -o "dist/cgen-$os-$arch" .
             done
           done
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: binaries
           path: dist/
@@ -47,10 +42,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    if: github.repository == 'acristoffers/cgen' && github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
 
     steps:
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: binaries
           path: dist/
