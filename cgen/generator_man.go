@@ -166,7 +166,7 @@ func formatManArgument(arg *Argument, separator string) string {
 			str += "\\fR"
 		}
 	}
-	if arg.Name != "" {
+	if arg.Named && arg.Name != "" {
 		if str != "" {
 			str += separator
 		}
@@ -192,6 +192,8 @@ func formatManArgument(arg *Argument, separator string) string {
 			}
 			str += "\\fR"
 		}
+	} else if arg.Name != "" && arg.LongDescription != "" {
+		str += "\\fB" + strings.ToUpper(arg.Name) + "\\fR"
 	}
 	return str
 }
