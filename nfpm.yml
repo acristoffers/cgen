@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://nfpm.goreleaser.com/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+name: "cgen"
+arch: "${ARCH}"
+platform: "linux"
+version: "1.0.5"
+section: "default"
+priority: "extra"
+maintainer: "Álan e Sousa <alan@esousa.me>"
+description: "Generate shell completions for Fish, Bash, and ZSH and man-pages from a single YAML file."
+homepage: "https://github.com/acristoffers/cgen"
+license: "MPL"
+release: "1${DIST_TAG}"
+contents:
+  - src: "build-${ARCH}/cgen"
+    dst: /usr/bin/cgen
+  - src: build/share/man/man1/cgen.1
+    dst: /usr/share/man/man1/cgen.1
+  - src: build/share/fish/completions/cgen.fish
+    dst: /usr/share/fish/vendor_completions.d/cgen.fish
+  - src: build/share/bash/completions/cgen.bash
+    dst: /usr/share/bash-completion/completions/cgen
+  - src: build/share/zsh/completions/_cgen
+    dst: /usr/share/zsh/site-functions/_cgen
