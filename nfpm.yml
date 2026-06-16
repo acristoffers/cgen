@@ -4,7 +4,7 @@
 name: "cgen"
 arch: "${ARCH}"
 platform: "linux"
-version: "1.0.5"
+version: "1.0.6"
 section: "default"
 priority: "extra"
 maintainer: "Álan e Sousa <alan@esousa.me>"
