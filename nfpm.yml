@@ -15,11 +15,21 @@ release: "1${DIST_TAG}"
 contents:
   - src: "build-${ARCH}/cgen"
     dst: /usr/bin/cgen
+    file_info:
+        mode: 0755
   - src: build/share/man/man1/cgen.1
     dst: /usr/share/man/man1/cgen.1
+    file_info:
+        mode: 0644
   - src: build/share/fish/completions/cgen.fish
     dst: /usr/share/fish/vendor_completions.d/cgen.fish
+    file_info:
+        mode: 0644
   - src: build/share/bash/completions/cgen.bash
     dst: /usr/share/bash-completion/completions/cgen
+    file_info:
+        mode: 0644
   - src: build/share/zsh/completions/_cgen
     dst: /usr/share/zsh/site-functions/_cgen
+    file_info:
+        mode: 0644
