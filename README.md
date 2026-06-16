@@ -194,3 +194,7 @@ Generates:
 * `git <TAB>` → suggests `clone`.
 * `git clone <TAB>` → suggests predefined repository URL.
 * `git clone https://... -<TAB>` → suggests `-o` and `--origin`.
+
+## 💾 Installation
+
+There are packages for Ubuntu and Fedora in my [personal repository](https://github.com/acristoffers/repository).
