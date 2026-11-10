@@ -17,7 +17,9 @@ clean:
 pack: build/share/man/man1/cgen.1
 	ARCH=amd64 DIST_TAG=.fc43 envsubst < nfpm.yml | nfpm pkg -f - --packager rpm --target build-amd64/
 	ARCH=amd64 DIST_TAG=.fc44 envsubst < nfpm.yml | nfpm pkg -f - --packager rpm --target build-amd64/
+	ARCH=amd64 DIST_TAG=.fc45 envsubst < nfpm.yml | nfpm pkg -f - --packager rpm --target build-amd64/
 	ARCH=amd64 DIST_TAG=      envsubst < nfpm.yml | nfpm pkg -f - --packager deb --target build-amd64/
 	ARCH=arm64 DIST_TAG=.fc43 envsubst < nfpm.yml | nfpm pkg -f - --packager rpm --target build-arm64/
 	ARCH=arm64 DIST_TAG=.fc44 envsubst < nfpm.yml | nfpm pkg -f - --packager rpm --target build-arm64/
+	ARCH=arm64 DIST_TAG=.fc45 envsubst < nfpm.yml | nfpm pkg -f - --packager rpm --target build-arm64/
 	ARCH=arm64 DIST_TAG=      envsubst < nfpm.yml | nfpm pkg -f - --packager deb --target build-arm64/
